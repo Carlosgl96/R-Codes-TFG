@@ -1,0 +1,268 @@
+---
+title: "Analisis exploratorio por caracter estudiado"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r , echo=F , results=F, message=FALSE}
+if(!require(nlme)){install.packages("nlme")}
+if(!require(multcomp)){install.packages("multcomp")}
+if(!require(multcompView)){install.packages("multcompView")}
+if(!require(lsmeans)){install.packages("lsmeans")}
+if(!require(lme4)){install.packages("lme4")}
+if(!require(lmerTest)){install.packages("lmerTest")}
+if(!require(TukeyC)){install.packages("TukeyC")}
+if (!require(readxl)) install.packages('readxl')
+if (!require(dplyr)) install.packages('dplyr')
+if (!require(car)) install.packages('car')
+
+set.seed(42)
+
+```
+
+```{r datos1}
+#Seleccionar datos para el an?lisis
+
+datos <- read_excel("../datos/datos.xlsx",
+                    sheet = "datos2")
+df <- datos[,c(1,2,3, i)]
+
+VI1 <- names(df[1])
+VI2 <- names(df[2])
+VI3 <- names(df[3])
+VD <- names(df[4])
+names(df) <- c("VI1", "VI2", "VI3", "VD")
+
+df[[1]] <- as.factor(df[[1]])
+df[[2]] <- as.factor(df[[2]])
+df[[3]] <- as.factor(df[[3]])
+```
+
+# ANOVA anidado con el modelo linear lme4 para la variable `r VD` comparando especies y teniendo en cuenta la variacion entre plantas
+
+```{r}
+# model2 = lmer(VD ~ VI1+(1|VI2|VI1)+(1|VI3|VI2), 
+model2 = lmer(VD ~ VI1 + (1|VI2:VI1),
+          data=df, 
+            REML=TRUE)
+
+anova(model2)
+ranova(model2)
+difflsmeans(model2, 
+            test.effs="VI1")
+```
+
+## Post-hoc con modelo lme4 para la variable `r VD` comparando entre especies
+
+```{r}
+posthoc2 = glht(model2,
+
+               linfct = mcp(VI1="Tukey"))
+
+mcs2 = summary(posthoc2,
+
+              test=adjusted("single-step"))
+
+mcs2
+
+cld(mcs2,
+    level=0.05,
+    decreasing=TRUE)
+```
+
+\newpage
+
+
+# ANOVA anidado con el modelo linear lme4 para la variable `r VD` comparando plantas y teniendo en cuenta la variacion entre frutos para una especie 
+
+```{r}
+dfPs <- df[which(df$VI1=="P. somniferum"),]
+model3 = lmer(VD ~ VI2 + (1|VI3:VI2),
+          data=dfPs, 
+            REML=TRUE)
+
+anova(model3)
+ranova(model3)
+difflsmeans(model3, 
+            test.effs="VI2")
+```
+
+## Post-hoc con modelo lme4 para la variable `r VD` comparando entre especies
+
+```{r}
+posthoc3 = glht(model3,
+
+               linfct = mcp(VI2="Tukey"))
+
+mcs3 = summary(posthoc3,
+
+              test=adjusted("single-step"))
+
+mcs3
+
+cld(mcs3,
+    level=0.05,
+    decreasing=TRUE)
+```
+
+\newpage
+
+# ANOVA anidado con el modelo linear lme4 para la variable `r VD` comparando plantas y teniendo en cuenta la variacion entre frutos para una especie
+
+```{r}
+dfPr <- df[which(df$VI1=="P. rhoeas"),]
+model4 = lmer(VD ~ VI2 + (1|VI3:VI2),
+          data=dfPr, 
+            REML=TRUE)
+
+anova(model4)
+ranova(model4)
+difflsmeans(model4, 
+            test.effs="VI2")
+```
+
+## Post-hoc con modelo lme4 para la variable `r VD` comparando entre especies
+
+```{r}
+posthoc4 = glht(model4,
+
+               linfct = mcp(VI2="Tukey"))
+
+mcs4 = summary(posthoc4,
+
+              test=adjusted("single-step"))
+
+mcs4
+
+cld(mcs4,
+    level=0.05,
+    decreasing=TRUE)
+```
+
+\newpage
+
+# ANOVA anidado con el modelo linear lme4 para la variable `r VD` comparando plantas y teniendo en cuenta la variacion entre frutos para una especie
+
+```{r}
+dfPh <- df[which(df$VI1=="P. hybridum"),]
+model5 = lmer(VD ~ VI2 + (1|VI3:VI2),
+          data=dfPh, 
+            REML=TRUE)
+
+anova(model5)
+ranova(model5)
+difflsmeans(model5, 
+            test.effs="VI2")
+```
+
+## Post-hoc con modelo lme4 para la variable `r VD` comparando entre especies
+
+```{r}
+posthoc5 = glht(model5,
+
+               linfct = mcp(VI2="Tukey"))
+
+mcs5 = summary(posthoc5,
+
+              test=adjusted("single-step"))
+
+mcs5
+
+cld(mcs5,
+    level=0.05,
+    decreasing=TRUE)
+```
+
+\newpage
+
+# ANOVA anidado con el modelo linear lme4 para la variable `r VD` comparando plantas y teniendo en cuenta la variacion entre frutos para una especie
+
+```{r}
+dfPd <- df[which(df$VI1=="P. dubium"),]
+model6 = lmer(VD ~ VI2 + (1|VI3:VI2),
+          data=dfPd, 
+            REML=TRUE)
+
+anova(model6)
+ranova(model6)
+difflsmeans(model6, 
+            test.effs="VI2")
+```
+
+## Post-hoc con modelo lme4 para la variable `r VD` comparando entre especies
+
+```{r}
+posthoc6 = glht(model6,
+
+               linfct = mcp(VI2="Tukey"))
+
+mcs6 = summary(posthoc6,
+
+              test=adjusted("single-step"))
+
+mcs6
+
+cld(mcs6,
+    level=0.05,
+    decreasing=TRUE)
+```
+
+\newpage
+
+#Media y desviaci?n t?pica para la variable `r VD`
+
+```{r}
+tabla.E <- group_by(df, VI1) %>%
+  summarise(
+    count = n(),
+    mean = mean(VD, na.rm = TRUE),
+    sd = sd(VD, na.rm = TRUE),
+    cv = sd/mean*100
+  )
+tabla.E
+write.csv2(tabla.E, 
+           file = paste("../tablas/",VD,"_Estadisticos_por_especie.csv",
+                        sep=""), 
+                        row.names=FALSE)
+```
+
+\newpage
+
+# Media y desviacion tipica para la variable `r VD` por especie y planta
+
+```{r}
+tabla.P <- group_by_(df, .dots=c("VI1","VI2")) %>%
+    summarise(
+    count = n(),
+    mean = mean(VD, na.rm = TRUE),
+    sd = sd(VD, na.rm = TRUE),
+    cv = sd/mean*100
+  )
+tabla.P
+write.csv2(tabla.P, 
+           file = paste("../tablas/",VD,"_Estadisticos_por_planta.csv",
+                        sep=""), 
+                        row.names=FALSE)
+```
+
+\newpage
+
+#Media y desviaci?n t?pica para la variable `r VD` por especie, planta y capsula
+
+```{r}
+tabla.F <- group_by_(df, .dots=c("VI1","VI2","VI3")) %>%
+    summarise(
+    count = n(),
+    mean = mean(VD, na.rm = TRUE),
+    sd = sd(VD, na.rm = TRUE),
+    cv = sd/mean*100
+  )
+tabla.F
+write.csv2(tabla.F, 
+           file = paste("../tablas/",VD,"_Estadisticos_por_capsula.csv",
+                        sep=""), 
+                        row.names=FALSE)
+```

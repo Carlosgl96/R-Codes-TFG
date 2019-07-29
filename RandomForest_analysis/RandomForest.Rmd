@@ -1,0 +1,147 @@
+---
+title: "Random Forest semillas Papaver sp."
+author: "Código a partir del trabajo Eduardo Palma Martín. Datos del trabajo de Carlos Gonzáles López"
+date: "28 de mayo de 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+##En caso de haber problemas relacionados con el parche 'MiKTeK 2.9', ejecutar este chunck.
+#Sys.getenv("PATH")
+#Sys.setenv(PATH=paste(Sys.getenv("PATH"),"C:/Program Files/MiKTeX 2.9/miktex/bin/x64/",sep=";"))
+```
+
+```{r , echo=F , results=F, message=FALSE}
+#Cargar paquetes
+if (!require(randomForest)) install.packages('randomForest')
+library("randomForest")
+if (!require(e1071)) install.packages('e1071')
+library("e1071")
+if (!require(caret)) install.packages('caret')
+library("caret")
+if (!require(readxl)) install.packages('readxl')
+library("readxl")
+if (!require(randomForestExplainer)) install.packages('randomForestExplainer')
+library("randomForestExplainer")
+
+set.seed(42) 
+```
+
+```{r datos}
+#Importar datos
+datos <- read_excel("datos/datos.xlsx",
+                    sheet = "datos2")
+dt <- datos[,c(1, 4:length(names(datos)))]
+dt$Especie <- as.factor(dt$Especie)
+```
+
+# Resumen del número de partículas en cada clase según Variedad
+
+```{r resumen datos}
+table(dt$Especie)
+```
+
+```{r modelo, results=F, message=FALSE}
+# Desordenar los datos
+g <- runif(nrow(dt))
+raw_data_desordenada <- as.data.frame(dt[order(g),])
+
+#Dividir set de datos en train y test
+ind <- sample(2,nrow(raw_data_desordenada),
+              replace=TRUE,
+              prob=c(0.2,0.8))             # Configurable: reparto de muestras entre set de entrenamiento y testeo
+trainData <- raw_data_desordenada[ind==1,]
+testData  <- raw_data_desordenada[ind==2,]
+
+#Entrenar el modelo
+rf <- randomForest(Especie~., 
+                   data = trainData, 
+                   mtry= 5,                # Configurable: número de variables en cada bifurcación
+                   ntree= 1000,            # Configurable: número de árboles en el bosque
+                   localImp=TRUE,
+                   proximity=TRUE)
+
+# localImp = TRUE
+
+#Guardar el modelo en el disco duro
+tipo<-"semillas"
+muestra<-"Papaver_sp"
+fecha <- Sys.Date()
+
+saveRDS(rf,file=paste(tipo, muestra, fecha, "RF_entrenado.rds", sep = "_"))
+nombre_archivo <- paste(tipo, muestra, fecha, "RF_entrenado.rds", sep = "_")
+```
+
+# Características del modelo RandomForest entrenado
+
+## Evolución del error
+```{r , echo=F }
+
+plot(rf)
+```
+
+## Importancia de las 10 variables con mayor peso
+```{r}
+#Importancia de cada variable
+varImpPlot(rf,
+           sort = T,
+           n.var = 10,
+           main= "Top 10 de variables más importantes")
+
+var.Imp = data.frame (importance (rf,
+                                  type=2))
+```
+
+## Error OOB
+```{r}
+print(rf)
+trainData$predicted.response = predict(rf, trainData)
+
+#Matriz de confusión
+print(
+  confusionMatrix(data = trainData$predicted.response,
+                  reference = trainData$Especie,
+                  positive = "P. somniferum"))
+```
+
+\newpage
+
+# Validación del modelo con los datos reservados
+
+```{r, echo=F}
+testData$predicted.response = predict(rf, testData)
+
+#Matriz de confusión
+print(
+  confusionMatrix(data = testData$predicted.response,
+                  reference = testData$Especie,
+                  positive = "P. somniferum"))
+```
+
+# Correleación de variales
+
+```{r}
+# Correlación variables
+forest_stats <- measure_importance(rf,mean_sample = "relevant_trees")
+plot_importance_ggpairs(forest_stats)
+```
+
+# Distribución media de profundidad mínima
+
+```{r}
+#Distribución media de profundidad mínima
+forest_frame <-min_depth_distribution(rf)
+plot_min_depth_distribution(forest_frame)
+```
+
+# 30 principales interacciones
+
+```{r}
+#30 principales interacciones
+forest_interactions <- min_depth_interactions(rf)
+plot_min_depth_interactions(forest_interactions)
+```
